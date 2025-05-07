@@ -1,0 +1,74 @@
+from collections import deque
+
+class State:
+    def __init__(self, missionaries, cannibals, boat, prev=None):
+        self.m = missionaries  # missionaries on the left
+        self.c = cannibals     # cannibals on the left
+        self.boat = boat       # 1 = left, 0 = right
+        self.prev = prev       # previous state for path tracking
+
+    def is_valid(self):
+        if self.m < 0 or self.c < 0 or self.m > 3 or self.c > 3:
+            return False
+        if self.m > 0 and self.m < self.c:
+            return False
+        m_right = 3 - self.m
+        c_right = 3 - self.c
+        if m_right > 0 and m_right < c_right:
+            return False
+        return True
+
+    def is_goal(self):
+        return self.m == 0 and self.c == 0 and self.boat == 0
+
+    def get_children(self):
+        moves = [(1, 0), (2, 0), (0, 1), (0, 2), (1, 1)]
+        children = []
+        for m_move, c_move in moves:
+            if self.boat == 1:
+                new_state = State(self.m - m_move, self.c - c_move, 0, self)
+            else:
+                new_state = State(self.m + m_move, self.c + c_move, 1, self)
+            if new_state.is_valid():
+                children.append(new_state)
+        return children
+
+    def __eq__(self, other):
+        return self.m == other.m and self.c == other.c and self.boat == other.boat
+
+    def __hash__(self):
+        return hash((self.m, self.c, self.boat))
+
+    def __str__(self):
+        return f"Left(M:{self.m}, C:{self.c}) | Right(M:{3-self.m}, C:{3-self.c}) | Boat: {'Left' if self.boat else 'Right'}"
+
+def bfs():
+    start = State(3, 3, 1)
+    queue = deque([start])
+    visited = set()
+    while queue:
+        state = queue.popleft()
+        if state.is_goal():
+            return state
+        visited.add(state)
+        for child in state.get_children():
+            if child not in visited:
+                queue.append(child)
+    return None
+
+def print_solution(goal_state):
+    path = []
+    while goal_state:
+        path.append(goal_state)
+        goal_state = goal_state.prev
+    path.reverse()
+    for step, state in enumerate(path):
+        print(f"Step {step}: {state}")
+
+if __name__ == "__main__":
+    solution = bfs()
+    if solution:
+        print("Solution Found:\n")
+        print_solution(solution)
+    else:
+        print("No solution found.")
